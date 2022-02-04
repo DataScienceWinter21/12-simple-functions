@@ -1,0 +1,176 @@
+---
+title: "Simple functions"
+author: "Bastola"
+date: "`r format(Sys.Date(), ' %B %d %Y')`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      collapse = TRUE, 
+                      comment=NA, 
+                      warning = FALSE,
+                      message = FALSE,
+                      fig.height = 4, fig.width = 6, fig.align='center')
+
+library(tidyverse) 
+library(stringr)
+library(tidytext)
+library(gutenbergr)
+library(wordcloud)
+library(magrittr)
+library(ggthemes)
+```
+
+
+## Your turn 1
+
+The variance of a random variable $x$ is defined as: 
+
+$$\operatorname{Var}(x)=\frac{1}{n-1} \sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)^{2}$$
+
+where $x_i = (\sum_i^n x_i)/n$] is the sample mean. Also, the skewness of the random variable $x$ is defined as:
+
+$$\operatorname{Skew}(x)=\frac{\frac{1}{n-2}\left(\sum_{i=1}^{n}\left(x_{i}-\bar{x}\right)^{3}\right)}{\operatorname{Var}(x)^{3 / 2}}$$
+
+Please write functions to calculate the variance and skewness of $\{12, 45, 54, 34, 56, 30, 67, \text{NA}\}$.
+
+```{r}
+x <- c(12, 45, 54, 34, 56, 30, 67, NA)
+```
+
+
+### a.
+
+```{r}
+# function to calculate the variance of a vector
+
+var <- function(x){
+  x <- na.omit(x) # omit NA values
+  sum((x - mean(x)) ^ 2) / (length(x) - 1)
+}
+
+```
+
+
+```{r}
+var(x)
+```
+
+
+### b. 
+
+```{r}
+# function to calculate the skewness of a vector
+
+skewness <- function(x) {
+  x <- na.omit(x) # omit NA values
+  sum((x - mean(x)) ^ 3) /((length(x) - 2) * var(x) ^ (3 / 2))
+}
+
+```
+
+
+```{r}
+skewness(x)
+```
+
+-----------------------------------
+
+# Your turn 2
+
+```{r, warning=TRUE}
+func <- function(x) {
+  if( length(x) < 2 ){warning("need string with atleast two characters")}else{
+    str_c(str_sub(x,1,1), collapse = ":")
+  }
+}
+
+# using str_c()
+func1 <- function(x){
+  if( length(x) < 2 ){warning("need string with atleast two characters")}else{
+    str_c(str_sub(x,1,1), collapse = ":")
+  }
+}
+
+
+x0 <- c()
+x1 <- c("a")
+x2 <- c("a","b")
+x3 <- c("a","b","c","d")
+
+func(x3)
+func1(x3)
+```
+
+
+-----------------------------------------
+
+## Your turn 3
+
+
+```{r}
+# Function to take the book id of books from project Gutenberg 
+# Return a data tibble with smart words and their counts, sorted
+
+word_count <- function(book_id) {
+    my_favorite_book <- gutenberg_download(book_id) %>% 
+    mutate(linenumber=row_number()) %>% 
+    unnest_tokens(word, text) %>% 
+    anti_join(stop_words) %>%
+    count(word, sort=TRUE)
+my_favorite_book
+}
+
+```
+
+
+### a. Go to [Project Gutenberg](https://www.gutenberg.org/) website and search the book ID of your favorite book. If you don't have a favorite book , try `1633`. What is the most used word in this book?
+
+
+```{r}
+book1 <- word_count(book_id = 1633)   
+```
+
+
+
+### b. Make a function that takes the data tibble  and the maximum number of words to plot in a word cloud as an argument and output the wordcloud as a plot.
+
+
+```{r}
+plot_word_cloud <- function(mybook, max_words){
+  wordcloud(words= mybook$word,freq =  mybook$n, max.words = max_words)
+}
+```
+
+
+
+```{r}
+plot_word_cloud(book1, 200)
+```
+
+### c. Modify the `word_count()` function so that it outputs words starting with a particular alphabet. You can do this by adding an argument to the function that takes the starting string as an argument.
+
+
+```{r}
+word_count_modified <- function(book_id, begin) {
+    my_favorite_book <- gutenberg_download(book_id) %>% 
+    mutate(linenumber=row_number()) %>% 
+    unnest_tokens(word, text) %>% 
+    anti_join(stop_words) %>%
+    count(word, sort=TRUE) %>%
+    filter(str_detect(word, str_glue("^[",{begin},"]")))  
+my_favorite_book
+}
+```
+
+
+```{r}
+book2 <- word_count_modified(245, "e")
+plot_word_cloud(book2, 10)
+```
+
+
